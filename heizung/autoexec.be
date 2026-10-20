@@ -791,7 +791,8 @@ class HeatingSensors
             "VorlaufIntern": {"Temperature": intTempForward},
             "RuecklaufIntern": {"Temperature": intTempReturn},
             "Zieltemperatur": {"Temperature": regler.setPoint},
-            "Heizungsregler": {"TempSlope": calculateTempSlope() * 60}
+            "Heizungsregler": {"TempSlope": calculateTempSlope() * 60},
+            "Mischventil": {"Position": mischventil.getPosition()}
         }
 
         for name : sensors.keys()
