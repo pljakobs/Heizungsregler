@@ -778,6 +778,45 @@ def handle_topic_nightShift(topic, idx, payload_s, payload_b)
   return(false)
 end
 
+class HeatingSensors
+    def json_append()
+        if extTempForward == nil || extTempReturn == nil ||
+           intTempForward == nil || intTempReturn == nil
+            return
+        end
+
+        var sensors = {
+            "VorlaufExtern": {"Temperature": extTempForward},
+            "RuecklaufExtern": {"Temperature": extTempReturn},
+            "VorlaufIntern": {"Temperature": intTempForward},
+            "RuecklaufIntern": {"Temperature": intTempReturn},
+            "Zieltemperatur": {"Temperature": regler.setPoint},
+            "Heizungsregler": {"TempSlope": calculateTempSlope() * 60}
+        }
+
+        for name : sensors.keys()
+            tasmota.response_append(
+                "," + json.dump(name) + ":" + json.dump(sensors[name]))
+        end
+    end
+
+    def web_sensor()
+        if extTempForward == nil || extTempReturn == nil ||
+           intTempForward == nil || intTempReturn == nil
+            return
+        end
+        tasmota.web_send_decimal(string.format(
+            "{s}Vorlauf Extern korrigiert{m}%.2f &deg;C{e}" +
+            "{s}Ruecklauf Extern korrigiert{m}%.2f &deg;C{e}" +
+            "{s}Vorlauf Intern korrigiert{m}%.2f &deg;C{e}" +
+            "{s}Ruecklauf Intern korrigiert{m}%.2f &deg;C{e}" +
+            "{s}Zieltemperatur{m}%.2f &deg;C{e}" +
+            "{s}Temperaturtrend{m}%.3f K/min{e}",
+            extTempForward, extTempReturn, intTempForward, intTempReturn,
+            regler.setPoint, calculateTempSlope() * 60))
+    end
+end
+
 mqtt.subscribe("Heizung/aussentemperatur", handle_topic_aussentemperatur)
 mqtt.subscribe("Heizung/nightmode",handle_topic_nightMode)
 mqtt.subscribe("Heizung/kp",handle_topic_kp)
@@ -787,6 +826,9 @@ mqtt.subscribe("Heizung/ks",handle_topic_kd)
 mqtt.subscribe("Heizung/tempfactor",handle_topic_tempFaktor)
 mqtt.subscribe("Heizung/tempcorrection",handle_topic_temperaturKorrektur)
 mqtt.subscribe("Heizung/nightshift",handle_topic_nightShift)
+
+var heatingSensors = HeatingSensors()
+tasmota.add_driver(heatingSensors)
 
 regler.setVerbose(true)
 mischventil.setMinStep(minStep)
